@@ -1,0 +1,259 @@
+Question 1 code:
+
+create schema assign3;
+use assign3;
+create table dr_observation_fact (
+patient_num int not null,
+encounter_num int not null,
+concept_cd varchar(100) not null,
+provider_id varchar(150) not null,
+start_date date not null,
+modifier_cd varchar(100) not null,
+instance_num int not null,
+end_date date,
+valtype_cd varchar(255),
+tval_char varchar(100),
+nval_num int,
+valueflag_cd varchar(255),
+units_cd varchar(255),
+observation_blob blob,
+dr_observation_level varchar(255),
+primary key (patient_num, encounter_num, concept_cd, provider_id, start_date,
+ modifier_cd, instance_num),
+ key concept_cd (concept_cd),
+ key provider_id (provider_id),
+ key modifier_cd (modifier_cd));
+ show columns from dr_observation_fact;
+create table dr_patient_dimension (
+patient_num int auto_increment not null primary key,
+birth_date date,
+death_date date,
+sex_cd varchar(40),
+race_cd varchar(100),
+ethnicity_cd varchar(100),
+zip_cd int,
+dr_pat_emergency_contact_num varchar(100),
+foreign key (patient_num) references dr_observation_fact(patient_num));
+show columns from dr_patient_dimension;
+create table dr_visit_dimension (
+encounter_num int auto_increment not null primary key,
+patient_num int,
+inout_cd varchar(50),
+start_date date,
+end_date date,
+dr_visit_notes varchar(255),
+foreign key (patient_num) references dr_observation_fact(patient_num));
+show columns from dr_visit_dimension;
+create table dr_provider_dimension (
+provider_path varchar(255) not null primary key,
+provider_id varchar(150),
+name_char varchar(255),
+dr_provider_designation varchar(255),
+foreign key (provider_id) references dr_observation_fact(provider_id));
+show columns from dr_provider_dimension;
+create table dr_concept_dimension (
+concept_path varchar(255) not null primary key,
+concept_cd varchar(100),
+name_char varchar(200),
+dr_concept_measure varchar(100),
+foreign key (concept_cd) references dr_observation_fact(concept_cd));
+show columns from dr_concept_dimension;
+create table dr_modifier_dimension (
+modifier_path varchar(255) not null primary key,
+modifier_cd varchar(100),
+name_char varchar(200),
+dr_modifier_number varchar(100),
+foreign key (modifier_cd) references dr_observation_fact(modifier_cd));
+show columns from dr_modifier_dimension;
+
+Question 2 code:
+
+insert into dr_observation_fact (patient_num, encounter_num, 
+concept_cd, provider_id, start_date, modifier_cd, instance_num, 
+end_date, valtype_cd, tval_char, nval_num, valueflag_cd, units_cd, 
+observation_blob, dr_observation_level) 
+values
+(1, '22', 'HT_bp', '9AA01', '2023-02-01', 'BLOOD PRESSURE', '1', '2023-02-07', 
+'CRI', 'NEW', '2022', 'A', 'mm', 'null', 'dr priority 1'),
+(2, '23', 'HT_glu', '9A901', '2023-02-02', 'GLUCOSE', '2', '2023-02-08', 
+'MAJ', 'OLD', '2022', 'B', 'dl', 'null', 'dr priority 2'),
+(3, '24', 'HT_choles', '9AA03', '2023-02-09', 'cholestrol', '3', '2023-02-09', 
+'MIN', 'NEW', '2021', 'C', 'mmhg', 'null', 'dr priority 1'),
+(4, '25', 'HT_BMI', '9AA05', '2023-02-06', 'bmi', '4', '2023-02-09', 
+'CRI', 'OLD', '2022', 'A', 'mgDL', 'null', 'dr priority 4'),
+(5, '26', 'HT_sysbp', '9AB06', '2023-02-07', 'sysbp', '5', '2023-02-10', 
+'MAJ', 'NEW', '2022', 'B', 'cm', 'null', 'dr priority 5');
+select * from dr_observation_fact;
+select count(*) from dr_observation_fact;
+insert into dr_patient_dimension (patient_num, birth_date, death_date, sex_cd, 
+race_cd, ethnicity_cd, zip_cd, dr_pat_emergency_contact_num) 
+values
+((select patient_num from dr_observation_fact where patient_num = '1'), '1986-10-10', 
+'2022-10-09', 'M', 'Black', 'Hispanic or latino', '46222', 'dr + 3174444444'),
+((select patient_num from dr_observation_fact where patient_num = '2'), '1983-12-08', 
+'2023-01-07', 'F', 'White', 'Not Hispanic or latino', '46223', 'dr + 3174444445'),
+((select patient_num from dr_observation_fact where patient_num = '3'), '1986-02-02', 
+'2021-02-02', 'F', 'Black', 'Hispanic or latino', '46227', 'dr + 3174444446'),
+((select patient_num from dr_observation_fact where patient_num = '4'), '1987-05-05', 
+'2022-03-03', 'M', 'Black', 'Hispanic or latino', '46222', 'dr + 3174444447'),
+((select patient_num from dr_observation_fact where patient_num = '5'), '1983-04-04', 
+'2022-12-07', 'M', 'White', 'Not Hispanic or latino', '46221', 'dr + 3174444448');
+select * from dr_patient_dimension;
+select count(*) from dr_patient_dimension;
+insert into dr_visit_dimension (encounter_num, patient_num, inout_cd, start_date, 
+end_date, dr_visit_notes) 
+values
+((select encounter_num from dr_observation_fact where encounter_num = '22'), 
+(select patient_num from dr_observation_fact where patient_num = '1'), 'emergency', 
+'2022-02-09', '2022-02-14', 'dr need phyiso help'),
+((select encounter_num from dr_observation_fact where encounter_num = '23'), 
+(select patient_num from dr_observation_fact where patient_num = '2'), 'inpat', 
+'2022-02-15', '2022-02-16', 'dr null'),
+((select encounter_num from dr_observation_fact where encounter_num = '24'), 
+(select patient_num from dr_observation_fact where patient_num = '3'), 'outpat', 
+'2022-02-02', '2022-02-10', 'dr need test report'),
+((select encounter_num from dr_observation_fact where encounter_num = '25'), 
+(select patient_num from dr_observation_fact where patient_num = '4'), 'emergency', 
+'2022-02-03', '2022-02-07', 'dr need to control bp'),
+((select encounter_num from dr_observation_fact where encounter_num = '26'), 
+(select patient_num from dr_observation_fact where patient_num = '5'), 'inpat', 
+'2022-02-02', '2022-02-03', 'dr need test report');
+select * from dr_visit_dimension;
+select count(*) from dr_visit_dimension;
+insert into dr_provider_dimension (provider_path, provider_id, name_char, 
+dr_provider_designation) 
+values
+('/provider/9AA01',
+(select provider_id from dr_observation_fact where provider_id = '9AA01'), 
+'Dr. Sona', 'dr+hod'),
+('/provider/9A901',
+(select provider_id from dr_observation_fact where provider_id = '9A901'), 
+'Dr. Willy', 'dr+ supervisior'),
+('/provider/9AA03',
+(select provider_id from dr_observation_fact where provider_id = '9AA03'), 
+'Dr. Riya', 'dr+specialist'),
+('/provider/9AA05',
+(select provider_id from dr_observation_fact where provider_id = '9AA05'), 
+'Dr. Ron', 'dr+temp'),
+('provider/9AB06',
+(select provider_id from dr_observation_fact where provider_id = '9AB06'), 
+'Dr. Michal', 'dr+visiting specialist');
+select * from dr_provider_dimension;
+select count(*) from dr_provider_dimension;
+insert into dr_concept_dimension (concept_path, concept_cd, name_char, 
+dr_concept_measure) 
+values
+('/provider/HT_bp',	
+(select concept_cd from dr_observation_fact where concept_cd = 'HT_bp'), 
+'Mona', 'dr+cri'),
+('/concept/HT_glu',	
+(select concept_cd from dr_observation_fact where concept_cd = 'HT_glu'), 
+'Nomard', 'dr+maj'),
+('/concept/HT_choles',	
+(select concept_cd from dr_observation_fact where concept_cd = 'HT_choles'), 
+'Michele', 'dr+min'),
+('/concept/HT_BMI',	
+(select concept_cd from dr_observation_fact where concept_cd = 'HT_BMI'), 
+'Shifa', 'dr+cri'),
+('/concept/HT_sysbp',	
+(select concept_cd from dr_observation_fact where concept_cd = 'HT_sysbp'), 
+'Ron', 'dr+maj');
+select * from dr_concept_dimension;
+select count(*) from dr_concept_dimension;
+insert into dr_modifier_dimension (modifier_path, modifier_cd, name_char, 
+dr_modifier_number) 
+values
+('/modifier/BP',	
+(select modifier_cd from dr_observation_fact where instance_num = '1'), 
+'Mona', '58'),
+('/modifier/GLU',	
+(select modifier_cd from dr_observation_fact where instance_num = '2'), 
+'TITO', '34'),
+('/modifier/CHOLE',	
+(select modifier_cd from dr_observation_fact where instance_num = '3'), 
+'TIGER', '56'),
+('/modifier/BMI',	
+(select modifier_cd from dr_observation_fact where instance_num = '4'), 
+'BRIAN', '89'),
+('/modifier/SYSBP',	
+(select modifier_cd from dr_observation_fact where instance_num = '5'), 
+'NINO', '43');
+select * from dr_modifier_dimension;
+select count(*) from dr_modifier_dimension;
+
+
+Question 4.a code:
+
+show tables from classicmodels;
+select distinct productVendor as DR_unique_vendor_names
+from products; 
+
+Question 4.b code:
+
+select distinct customerName as DR_customer_names_from_california
+from customers
+where state = 'CA';
+
+Question 4.c code:
+
+select avg(creditLimit) as DR_AVG_credit_limit_of_CA_Customers
+from customers
+where state = 'CA';
+
+Question 4.d code:
+
+select distinct customerNumber,
+count(orderNumber) as DR_Totalorders_by_each_customer_in_2005
+from orders
+where orderDate>='2005-01-01' and orderDate<='2005-12-31'
+group by customerNumber;
+
+Question 4.e code:
+
+select productName
+from products
+where quantityInStock<200;
+
+
+Question 5.a code:
+
+select customers.customerName,
+count(orders.orderNumber) as 'DR_orders_in_2003'
+from customers
+join orders on customers.customerNumber = orders.customerNumber
+where year (orders.orderDate) = 2003
+group by customers.customerName;
+
+Question 5.b code:
+
+select employees.lastName,
+offices.country,
+concat('RD','"9981') as reversed_intial_column
+from employees
+join offices on employees.officeCode = offices.officeCode
+where offices.country = 'Japan' or offices.country = 'France'
+order by offices.country;
+
+Question 5.c code:
+
+select lastName,
+firstName
+from employees
+where jobTitle like '%Manager%';
+
+Question 5.d code:
+
+select productName,
+sum(orderdetails.quantityOrdered) as 'DR_Total_quantity_sold'
+from products
+join orderdetails on products.productCode = orderdetails.productCode
+group by productName;
+
+Question 5.e code:
+
+select customerName,
+sum(payments.amount) as 'DR_total_amount_paid'
+from customers
+join payments on customers.customerNumber = payments.customerNumber
+group by customerName;
+
